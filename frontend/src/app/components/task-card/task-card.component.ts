@@ -1,20 +1,25 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { Task } from '../../models/task.model';
+import { FormsModule } from '@angular/forms';
+import { Task, TaskStatus } from '../../models/task.model';
 
 @Component({
   selector: 'app-task-card',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, FormsModule],
   template: `
     <div class="card border-0 shadow-sm task-card h-100" [class.border-start]="true"
          [class]="'border-' + priorityColor(task.priority)">
       <div class="card-body p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start mb-3">
-          <span [class]="'badge rounded-pill bg-' + statusColor(task.status) + '-subtle text-' + statusColor(task.status) + ' fw-medium'">
-            {{ task.status }}
-          </span>
+          <div class="flex-grow-1 me-2">
+            <select class="form-select form-select-sm w-auto" [ngModel]="task.status" (ngModelChange)="onStatusChange($event)">
+              <option value="Todo">Todo</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
           <div class="dropdown">
             <button class="btn btn-sm btn-ghost p-1 rounded" data-bs-toggle="dropdown">
               <i class="bi bi-three-dots-vertical text-muted"></i>
@@ -27,7 +32,7 @@ import { Task } from '../../models/task.model';
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <button class="dropdown-item text-danger" (click)="delete.emit(task.id?.toString() ?? '')">
+                <button class="dropdown-item text-danger" (click)="delete.emit(task.id.toString())">
                   <i class="bi bi-trash me-2"></i>Delete
                 </button>
               </li>
@@ -74,6 +79,11 @@ import { Task } from '../../models/task.model';
 export class TaskCardComponent {
   @Input({ required: true }) task!: Task;
   @Output() delete = new EventEmitter<string>();
+  @Output() statusChange = new EventEmitter<{ id: string; status: TaskStatus }>();
+
+  onStatusChange(status: TaskStatus) {
+    this.statusChange.emit({ id: String(this.task.id), status });
+  }
 
   statusColor(status: string): string {
     const map: Record<string, string> = {

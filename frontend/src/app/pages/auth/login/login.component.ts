@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -93,7 +93,7 @@ export class LoginComponent {
   error = signal<string | null>(null);
   showPass = signal(false);
 
-  constructor(private fb: FormBuilder, private authService: AuthService) {
+  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
@@ -115,7 +115,10 @@ export class LoginComponent {
     this.error.set(null);
 
     this.authService.login(this.form.value).subscribe({
-      next: () => this.loading.set(false),
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/dashboard']);
+      },
       error: (err) => {
         this.error.set(err.error?.message ?? 'Login failed. Please try again.');
         this.loading.set(false);

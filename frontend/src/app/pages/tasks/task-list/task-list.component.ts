@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { TaskService } from '../../../services/task.service';
-import { Task, TaskFilters } from '../../../models/task.model';
+import { Task, TaskFilters, TaskStatus } from '../../../models/task.model';
 import { TaskCardComponent } from '../../../components/task-card/task-card.component';
 
 @Component({
@@ -100,7 +100,7 @@ import { TaskCardComponent } from '../../../components/task-card/task-card.compo
           <div class="row g-3">
             @for (task of tasks(); track task.id) {
               <div class="col-12 col-md-6 col-xl-4">
-                <app-task-card [task]="task" (delete)="deleteTask($event)" />
+                <app-task-card [task]="task" (delete)="deleteTask($event)" (statusChange)="updateTaskStatus($event)" />
               </div>
             }
           </div>
@@ -162,6 +162,23 @@ export class TaskListComponent implements OnInit {
     this.searchTerm = '';
     this.filters = { search: '', status: 'All', priority: 'All' };
     this.loadTasks();
+  }
+
+  updateTaskStatus(event: { id: string; status: TaskStatus }) {
+    const task = this.tasks().find((item) => String(item.id) === event.id);
+    if (!task) return;
+
+    this.taskService
+      .updateTask(event.id, {
+        title: task.title,
+        description: task.description,
+        status: event.status,
+        priority: task.priority,
+      })
+      .subscribe({
+        next: () => this.loadTasks(),
+        error: () => this.loadTasks(),
+      });
   }
 
   deleteTask(id: string) {

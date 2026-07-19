@@ -5,7 +5,7 @@ import { TaskService } from '../../services/task.service';
 import { AuthService } from '../../services/auth.service';
 import { StatsCardComponent } from '../../components/stats-card/stats-card.component';
 import { TaskCardComponent } from '../../components/task-card/task-card.component';
-import { Task, TaskStats } from '../../models/task.model';
+import { Task, TaskStats, TaskStatus } from '../../models/task.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -77,7 +77,7 @@ import { Task, TaskStats } from '../../models/task.model';
         <div class="row g-3">
           @for (task of recentTasks(); track task.id) {
             <div class="col-12 col-md-6 col-xl-4">
-              <app-task-card [task]="task" (delete)="deleteTask($event)" />
+              <app-task-card [task]="task" (delete)="deleteTask($event)" (statusChange)="updateTaskStatus($event)" />
             </div>
           }
         </div>
@@ -116,6 +116,23 @@ export class DashboardComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  updateTaskStatus(event: { id: string; status: TaskStatus }) {
+    const task = this.tasks().find((item) => String(item.id) === event.id);
+    if (!task) return;
+
+    this.taskService
+      .updateTask(event.id, {
+        title: task.title,
+        description: task.description,
+        status: event.status,
+        priority: task.priority,
+      })
+      .subscribe({
+        next: () => this.loadTasks(),
+        error: () => this.loadTasks(),
+      });
   }
 
   deleteTask(id: string) {
