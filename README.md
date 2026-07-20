@@ -1,12 +1,12 @@
 # AI Task Manager
 
-A full-stack task management application with JWT authentication, CRUD operations, dashboard analytics, and a built-in local AI feature that generates task descriptions from titles — no paid API required. Uses SQLite by default (demo-friendly); optional PostgreSQL via `DATABASE_URL`.
+A full-stack task management application with JWT authentication, CRUD operations, dashboard analytics, and a built-in local AI description generator. The project is documented and configured for a MongoDB-based backend deployment.
 
 ---
 
 ## Project Overview
 
-AI Task Manager is a production-ready web application built with **Angular 20** (standalone components) on the frontend and **Node.js + Express + Sequelize (SQLite/PostgreSQL)** on the backend. Users can register, log in, manage tasks with full CRUD, filter and search, view a live dashboard, and use the AI description generator to auto-fill task details based on the title.
+AI Task Manager is a production-ready web application built with **Angular 20** on the frontend and **Node.js + Express + MongoDB Atlas + Mongoose** on the backend. Users can register, log in, manage tasks with full CRUD, filter and search, view a live dashboard, and use the AI description generator to auto-fill task details based on the title.
 
 ---
 
@@ -17,7 +17,7 @@ AI Task Manager is a production-ready web application built with **Angular 20** 
 - **Task CRUD** — Create, read, update, delete tasks with validation on both frontend and backend
 - **Dashboard** — Live stats: total, completed, in-progress, and pending task counts
 - **Search & Filter** — Real-time debounced search by title; filter by status and priority
-- **AI Description Generator** — Click ✨ after entering a title to auto-generate a contextual description using local NLP heuristics (no external API)
+- **AI Description Generator** — Click ✨ after entering a title to auto-generate a contextual description using local NLP heuristics
 - **Responsive Design** — Mobile, tablet, and desktop layouts using Bootstrap 5
 - **Lazy Loading** — All Angular pages are lazy-loaded for optimal bundle size
 
@@ -30,9 +30,8 @@ AI Task Manager is a production-ready web application built with **Angular 20** 
 |---|---|
 | Node.js | Runtime |
 | Express.js | Web framework |
-| Sequelize | ORM / schema validation |
-| SQLite | Default database (demo/local) |
-| PostgreSQL | Optional production database |
+| MongoDB Atlas | Cloud database |
+| Mongoose | ODM / schema validation |
 | bcryptjs | Password hashing |
 | jsonwebtoken | JWT auth |
 | express-validator | Request validation |
@@ -54,12 +53,12 @@ AI Task Manager is a production-ready web application built with **Angular 20** 
 
 ## Folder Structure
 
-```
+```text
 ai-task-manager/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── database.js        # SQLite / PostgreSQL connection
+│   │   │   ├── database.js        # MongoDB connection
 │   │   │   └── jwt.js             # Token generation & verification
 │   │   ├── controllers/
 │   │   │   ├── authController.js  # Register, login, getMe
@@ -79,7 +78,7 @@ ai-task-manager/
 │   │   ├── utils/
 │   │   │   └── AppError.js        # Custom error class
 │   │   └── server.js              # Express entry point
-│   ├── .env.example
+│   ├── .env
 │   └── package.json
 │
 └── frontend/
@@ -122,9 +121,8 @@ ai-task-manager/
 ### Prerequisites
 - Node.js 18+
 - npm 9+
+- MongoDB Atlas account or local MongoDB instance
 - Angular CLI 20 (optional for dev): `npm install -g @angular/cli@20`
-
-No external database account is required for local demo — SQLite is created automatically.
 
 ### 1. Clone the repository
 ```bash
@@ -138,15 +136,11 @@ cd backend
 npm install
 ```
 
-Create a `.env` file from the example, then:
+Create a `.env` file with the MongoDB connection details, then:
 ```bash
-cp .env.example .env   # Linux/macOS
-# copy .env.example .env   # Windows
-```
-```bash
-npm run dev        # development with nodemon
+npm run dev
 # or
-npm start          # production
+npm start
 ```
 
 The API will be running at `http://localhost:5000`.
@@ -164,11 +158,11 @@ The Angular app will be running at `http://localhost:4200`.
 
 ## Environment Variables
 
-Copy `backend/.env.example` to `backend/.env`:
+Create `backend/.env`:
 
 ```env
 PORT=5000
-DB_PATH=./data/ai-task-manager.sqlite
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/ai-task-manager?retryWrites=true&w=majority
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production_min_32_chars
 JWT_EXPIRES_IN=7d
 NODE_ENV=development
@@ -178,9 +172,8 @@ CLIENT_URL=http://localhost:4200
 | Variable | Description |
 |---|---|
 | `PORT` | Port the Express server listens on |
-| `DB_PATH` | SQLite file path (used when `DATABASE_URL` is not set) |
-| `DATABASE_URL` | Optional PostgreSQL connection string (overrides SQLite) |
-| `JWT_SECRET` | Secret key for signing JWTs (min 32 chars in prod) |
+| `MONGODB_URI` | MongoDB Atlas or local MongoDB connection string |
+| `JWT_SECRET` | Secret key for signing JWTs |
 | `JWT_EXPIRES_IN` | Token lifetime (e.g. `7d`, `24h`) |
 | `NODE_ENV` | `development` or `production` |
 | `CLIENT_URL` | Allowed CORS origin (Angular app URL) |
@@ -189,7 +182,7 @@ CLIENT_URL=http://localhost:4200
 
 ## Deploy to Render
 
-This repo includes a [Render Blueprint](https://render.com/docs/infrastructure-as-code) (`render.yaml`) for one-click deployment.
+This repo includes a [Render Blueprint](https://render.com/docs/infrastructure-as-code) (`render.yaml`) for deployment.
 
 ### Services created
 
@@ -203,15 +196,10 @@ This repo includes a [Render Blueprint](https://render.com/docs/infrastructure-a
 1. Push this repo to GitHub.
 2. Open [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**.
 3. Connect the repository and apply the Blueprint.
-4. Render auto-generates `JWT_SECRET` and sets CORS, port, and SQLite path.
-5. After deploy, verify the API: `GET https://ai-task-manager-backend.onrender.com/api/health`
-6. Open the frontend URL and register a demo account.
-
-### Demo notes (SQLite on Render)
-
-- The backend uses **SQLite** stored at `./data/ai-task-manager.sqlite`.
-- On Render’s free tier, the filesystem is **ephemeral** — data may reset on redeploys or restarts. Fine for demos.
-- For persistent production data, set `DATABASE_URL` to a Render PostgreSQL instance instead.
+4. Add a MongoDB service or external connection string to `MONGODB_URI`.
+5. Set the backend and frontend env vars in Render.
+6. Verify the API: `GET https://ai-task-manager-backend.onrender.com/api/health`
+7. Open the frontend URL and register a demo account.
 
 ### Already configured in `render.yaml`
 
@@ -225,14 +213,14 @@ This repo includes a [Render Blueprint](https://render.com/docs/infrastructure-a
 ## API Documentation
 
 ### Base URL
-```
+```text
 http://localhost:5000/api
 ```
 
 ### Authentication
 
 #### Register
-```
+```http
 POST /auth/register
 Content-Type: application/json
 
@@ -241,8 +229,10 @@ Content-Type: application/json
   "email": "jane@example.com",
   "password": "secret123"
 }
+```
 
 Response 201:
+```json
 {
   "success": true,
   "token": "<jwt>",
@@ -251,7 +241,7 @@ Response 201:
 ```
 
 #### Login
-```
+```http
 POST /auth/login
 Content-Type: application/json
 
@@ -259,6 +249,25 @@ Content-Type: application/json
   "email": "jane@example.com",
   "password": "secret123"
 }
+```
+
+Response 200:
+```json
+{
+  "success": true,
+  "token": "<jwt>",
+  "user": { "id": "...", "name": "Jane Doe", "email": "jane@example.com" }
+}
+```
+
+---
+
+## Notes
+
+- The app is designed to work with a MongoDB Atlas connection for production reliability.
+- Local development can use a MongoDB instance running on your machine or a cloud MongoDB service.
+- The frontend uses the backend API base URL configured in the Angular environment files.
+
 
 Response 200: same shape as register
 ```
