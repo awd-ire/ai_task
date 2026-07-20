@@ -9,20 +9,40 @@ if (!fs.existsSync(dbDirectory)) {
   fs.mkdirSync(dbDirectory, { recursive: true });
 }
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  logging: false,
-  define: {
-    timestamps: true,
-    underscored: true,
-  },
-});
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false,
+      dialectOptions:
+        process.env.NODE_ENV === 'production'
+          ? {
+              ssl: {
+                require: true,
+                rejectUnauthorized: false,
+              },
+            }
+          : {},
+      define: {
+        timestamps: true,
+        underscored: true,
+      },
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: dbPath,
+      logging: false,
+      define: {
+        timestamps: true,
+        underscored: true,
+      },
+    });
 
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log(`✅ SQLite database connected: ${dbPath}`);
+    console.log(
+      `✅ Database connected: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'} | ${process.env.DATABASE_URL || dbPath}`
+    );
 
     const User = require('../models/User');
     const Task = require('../models/Task');
@@ -31,9 +51,9 @@ const connectDB = async () => {
     Task.belongsTo(User, { foreignKey: 'user_id' });
 
     await sequelize.sync({ force: false, alter: false });
-    console.log('✅ SQLite tables synchronized');
+    console.log('✅ Database tables synchronized');
   } catch (error) {
-    console.error('❌ SQLite connection error:', error.message);
+    console.error('❌ Database connection error:', error.message);
     process.exit(1);
   }
 };

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./config/database');
@@ -31,6 +32,15 @@ const startServer = async () => {
   // API routes
   app.use('/api/auth', authRoutes);
   app.use('/api/tasks', taskRoutes);
+
+  // Serve built Angular app
+  app.use(express.static(path.join(process.cwd(), 'public')));
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  });
 
   // 404 handler
   app.use((req, res) => {

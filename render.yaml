@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ai-task-manager-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        value: https://ai-task-manager-frontend.onrender.com
+      - key: DATABASE_URL
+        sync: false
+
+  - type: static
+    name: ai-task-manager-frontend
+    env: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist/frontend/browser
+    envVars:
+      - key: NODE_ENV
+        value: production
